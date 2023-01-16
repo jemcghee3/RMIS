@@ -1,14 +1,28 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold
 
+# Define a function to perform five-fold cross validation
+def five_fold_cv(model, X, y):
+    results = []
+    kf = KFold(n_splits=5, shuffle=True, random_state=1)
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X.iloc[train_index, :], X.iloc[test_index, :]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        model.fit(X_train, y_train)
+        # print(model.score(X_test, y_test))
+        results.append(model.score(X_test, y_test))
+    print("The average cross-validation error is ", sum(results) / len(results))
+        
 # Define a function to change the value of decision column
 def change_decision_value(value):
     if value == 'accept':
         return 1
     else:
         return 0
-    
+
+# Define a function to change the value of plusminus columns
 def change_plusminus_value(value):
     if value == '++':
         return 2
@@ -22,7 +36,7 @@ def change_plusminus_value(value):
 # this section loads the data and clears rows where the decision is not made
 
 # Load the data from an Excel file
-data = pd.read_excel('Registrations_Sep_2022_a.xlsm', header=2) # header = 2 means that the first two rows are not included in the data
+data = pd.read_excel('./Registrations_Sep_2022_a.xlsm', header=2) # header = 2 means that the first two rows are not included in the data
 # drop the columns with all NaN values
 data = data.dropna(axis=1, how='all')
 # drop the rows with all NaN values
@@ -91,27 +105,22 @@ data['Experience (++, +, -, 0)'] = data['Experience (++, +, -, 0)'].apply(change
 
 
 
-print('-----------------')
-
-
-
 # Define the target variable and the parameters)
 
 
 X = data.drop(columns=['Decision'])
 y = data['Decision']
 
-print(X)
-print(y)
-print('-----------------')
 
-    
+clf = LogisticRegression(random_state=1)
+five_fold_cv(clf, X[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y)
+
 
 # Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
 
 # Perform logistic regression
-clf = LogisticRegression()
+clf = LogisticRegression(random_state=1)
 clf.fit(X_train[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_train)
 
 # Print the accuracy of the model
@@ -127,45 +136,36 @@ print(X_test[clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0
 # Print the X_test values where the predicted class is 0
 print(X_test[clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']]) == 0])
 
-"""
-# Create a list to store the column 4 of training set
-column_4_list = []
 
+# Create a list to store the approved universities of training set
+approved_universities = []
+
+# Iterate through the training set to find the approved universities in the column named "University" in row i
+X_train.columns.get_loc("University")
 # Iterate through the training set
 for i in range(len(X_train)):
-    # Check if column 8 of the training set is 1
+    # Check if acceptance of the training set is 1
     if y_train.iloc[i] == 1:
-        # Check if column 4 of the training set is in the list
-        if X_train.iloc[i, 4] not in column_4_list:
-            column_4_list.append(X_train.iloc[i, 4])
-            
+        # Check if university of the training set is in the list
+        if X_train.iloc[i, X_train.columns.get_loc("University")] not in approved_universities:
+            approved_universities.append(X_train.iloc[i, X_train.columns.get_loc("University")])
+
 # Iterate through the test set
 for i in range(len(X_test)):
-    # Check if column 4 of the test set is in the list
-    if X_test.iloc[i, 4] not in column_4_list:
-        # Print the content of column 4 for that row
-        print(X_test.iloc[i, 4])
-        # Ask the user for input to accept or reject
-        user_input = input("Accept or reject this value? (A/R)")
+    # Check if university of the test set is in the list
+    if X_test.iloc[i, X_test.columns.get_loc("University")] not in approved_universities:
+        # Print the content of university column for that row
+        while True:
+            print(X_test.iloc[i, X_test.columns.get_loc("University")])
+            # Ask the user for input to accept or reject
+            user_input = input("Accept or reject this value? (A/R) ")
+            try : 
+                user_input = user_input.upper()
+                # Check if the input is valid
+                if user_input != 'A' and user_input != 'R':
+                    raise ValueError
+                break
+            except ValueError:
+                print("Invalid input")
         if user_input == 'A':
-            column_4_list.append(X_test.iloc[i, 4])
-            
-            
-            
-from sklearn.model_selection import GridSearchCV
-from sklearn.linear_model import LogisticRegression
-
-# Define the hyperparameters to search over
-param_grid = {'C': [0.1, 1, 10],
-              'penalty': ['l1', 'l2']}
-
-# Create a logistic regression model
-clf = LogisticRegression()
-
-# Use GridSearchCV to perform a k-fold cross validation for each combination of hyperparameters
-grid_search = GridSearchCV(clf, param_grid, cv=5)
-grid_search.fit(X_train, y_train)
-
-# The best hyperparameters are stored in the best_params_ attribute
-print(grid_search.best_params_)
-"""
+            approved_universities.append(X_test.iloc[i, X_test.columns.get_loc("University")])
