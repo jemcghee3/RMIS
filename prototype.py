@@ -13,7 +13,7 @@ def five_fold_cv(model, X, y):
         model.fit(X_train, y_train)
         # print(model.score(X_test, y_test))
         results.append(model.score(X_test, y_test))
-    print("The average cross-validation error is ", sum(results) / len(results))
+    print("The average cross-validation accuracy is ", sum(results) / len(results))
         
 # Define a function to change the value of decision column
 def change_decision_value(value):
@@ -32,6 +32,8 @@ def change_plusminus_value(value):
         return -1
     else:
         return 0
+
+# add rules of what happens when -1 and when average is less than 1.
 
 # this section loads the data and clears rows where the decision is not made
 
@@ -126,15 +128,20 @@ clf.fit(X_train[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_train)
 # Print the accuracy of the model
 print(clf.score(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test))
 # Print the class probabilities
-print(clf.predict_proba(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']]))
+print(clf.predict_proba(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])) # the second item in the sublist is the probability of the class 1
+# save the predicted classes
+predicted_classes = clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])
+X_test['Predicted'] = predicted_classes
 # Print the predicted classes
-print(clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']]))
+# print(predicted_classes)
 # Print the confusion matrix
-print(pd.crosstab(y_test, clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])))
+print(pd.crosstab(y_test, predicted_classes, rownames=['Actual'], colnames=['Predicted'], margins=True))
 # Print the X_test values where the predicted class is 1
-print(X_test[clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']]) == 1])
+print("After applying the machine learning model, the predicted class for the following students is 1, that the student would be accepted:")
+print(X_test[predicted_classes == 1])
 # Print the X_test values where the predicted class is 0
-print(X_test[clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']]) == 0])
+print("After applying the machine learning model, the predicted class for the following students is 1, that the student would be accepted:")
+print(X_test[predicted_classes == 0])
 
 
 # Create a list to store the approved universities of training set
@@ -151,6 +158,7 @@ for i in range(len(X_train)):
             approved_universities.append(X_train.iloc[i, X_train.columns.get_loc("University")])
 
 # Iterate through the test set
+print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
 for i in range(len(X_test)):
     # Check if university of the test set is in the list
     if X_test.iloc[i, X_test.columns.get_loc("University")] not in approved_universities:
@@ -169,3 +177,26 @@ for i in range(len(X_test)):
                 print("Invalid input")
         if user_input == 'A':
             approved_universities.append(X_test.iloc[i, X_test.columns.get_loc("University")])
+        else:
+            predicted_classes[i] = 0 # Reject the student
+
+print("After applying a rule on whether the university is approved and checking with the human, the following students should be rejected:")
+for i in range(len(predicted_classes)):
+ 
+# update the decision column
+    if X_test.iloc[i, X_test.columns.get_loc("Predicted")] == 1 and predicted_classes[i] == 0:
+        print("Rejecting the student due to the university not being approved.")
+        print(X_test.iloc[[i]])
+        X_test.iloc[i, X_test.columns.get_loc("Predicted")] = predicted_classes[i]
+#for i in range(len(predicted_classes)):
+#    X_test.iloc[i, X_test.columns.get_loc("Decision")] = predicted_classes[i]
+
+print("After applying the rule on whether the university is approved and checking with the human, the following students would be rejected:")
+print(X_test[predicted_classes == 0])
+
+
+            
+# Need to reject the student if the university is not in the list - done
+# save approved universities to a file
+# if a student has a -1, then the student is rejected
+# if the grade + experience is less than 1, then the student is rejected
