@@ -45,27 +45,46 @@ loop_decisions = KB.loop_decision_maker(X_test)
 KB_decisions = KB.KB_decision_maker(X_test)
 
 approved_universities = pickle.load(open('approved_universities.pkl', 'rb'))
+"""
 # Iterate through the test set
 print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
-"""for i in range(len(X_test)):
+# commented out for testing purposes to avoid having to answer each time
+for i in range(len(X_test)):
     result, approved_universities = KB.check_university(X_test.iloc[i, X_test.columns.get_loc("University")], approved_universities)
     if result == 0:
         print("The student {} {} is rejected. {} is not an approved university.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("University")]))
         KB_decisions[i] = 0"""
 
+compensation_rule_check = False
 for i in range(len(X_test)):
     result = KB.compare_grade_experience(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")])
-    if result == 0:
+    if result == 0: # Only check the rule if the student would be rejected by the rule
+        if compensation_rule_check == False:
+            rule = "One '0' for either average Bachelor's grade or for experience can be compensated by one '++' in another criterion."
+            compensation_rule_check, compensation_rule_validity = KB.rule_checker(rule)
+            if compensation_rule_validity == False:
+                break # If the rule is not valid, then the loop is broken to avoid applications being rejected under the rule
         print("The student {} {} is rejected. The grade score was {} and the experience score was {}.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")]))
         KB_decisions[i] = 0
 
+no_negative_score_rule_check = False
 for i in range(len(X_test)):
     result = KB.no_negative_score(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")])
     if result == 0:
+        if no_negative_score_rule_check == False:
+            rule = "A rating in any criterion with '-' constitutes a 'not acceptable'."
+            no_negative_score_rule_check, no_negative_rule_validity = KB.rule_checker(rule)
+            if no_negative_rule_validity == False:
+                break # If the rule is not valid, then the loop is broken to avoid applications being rejected under the rule
         print("The student {} {} is rejected. The grade score was '-', which requires rejection.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")]))
         KB_decisions[i] = 0
     result = KB.no_negative_score(X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")])        
     if result == 0:
+        if no_negative_score_rule_check == False:
+            rule = "A rating in any criterion with '-' constitutes a 'not acceptable'."
+            no_negative_score_rule_check, no_negative_rule_validity = KB.rule_checker(rule)
+            if no_negative_rule_validity == False:
+                break # If the rule is not valid, then the loop is broken to avoid applications being rejected under the rule
         print("The student {} {} is rejected. The experience score was '-', which requires rejection.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")]))
         KB_decisions[i] = 0
         
@@ -92,6 +111,10 @@ print(X_test[loop_decisions == 0])
 # Print the final confusion matrix
 print(pd.crosstab(y_test, loop_decisions, rownames=['Actual'], colnames=['Predicted'], margins=True))
 
-# make loop_decisions a column in X_test and save the data to an excel file
-X_test['Predicted'] = loop_decisions
+
+
+# make the predictions into columns in X_test and save the data to an excel file
+X_test['ML Predicted'] = ML_predictions
+X_test['KB Predicted'] = KB_decisions
+X_test['Loop Predicted'] = loop_decisions
 X_test.to_excel('test_data.xlsx')
