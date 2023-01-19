@@ -45,7 +45,7 @@ loop_decisions = KB.loop_decision_maker(X_test)
 KB_decisions = KB.KB_decision_maker(X_test)
 
 approved_universities = pickle.load(open('approved_universities.pkl', 'rb'))
-"""
+
 # Iterate through the test set
 print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
 # commented out for testing purposes to avoid having to answer each time
@@ -53,7 +53,7 @@ for i in range(len(X_test)):
     result, approved_universities = KB.check_university(X_test.iloc[i, X_test.columns.get_loc("University")], approved_universities)
     if result == 0:
         print("The student {} {} is rejected. {} is not an approved university.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("University")]))
-        KB_decisions[i] = 0"""
+        KB_decisions[i] = 0
 
 compensation_rule_check = False
 for i in range(len(X_test)):
@@ -109,9 +109,13 @@ print("After applying the entire loop, the predicted class for the following stu
 print(X_test[loop_decisions == 0])
 
 # Print the final confusion matrix
+print("The final confusion matrix for the entire loop is:")
 print(pd.crosstab(y_test, loop_decisions, rownames=['Actual'], colnames=['Predicted'], margins=True))
 
-
+print("The accuracy of the machine learning model is", clf.score(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test))
+KB_decisions = pd.Series(KB_decisions)
+print("The accuracy of the knowledge base is", (sum(1 for x,y in zip(KB_decisions,y_test) if x == y) / len(y_test)))
+print("The accuracy of the entire loop is", (sum(1 for x,y in zip(loop_decisions,y_test) if x == y) / len(y_test)))
 
 # make the predictions into columns in X_test and save the data to an excel file
 X_test['ML Predicted'] = ML_predictions
