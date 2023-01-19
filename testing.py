@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import fhnw_KB as KB
-
+from sklearn.metrics import roc_auc_score
 
 # Load the data from an Excel file
 # 2023_spring and 2022_fall to be used for test data
@@ -113,12 +113,16 @@ print("The final confusion matrix for the entire loop is:")
 print(pd.crosstab(y_test, loop_decisions, rownames=['Actual'], colnames=['Predicted'], margins=True))
 
 print("The accuracy of the machine learning model is", clf.score(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test))
+print("The area under the Receiver Operating Characteristic Curve for the machine learning model is", roc_auc_score(y_test, clf.predict_proba(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])[:,1]))
 KB_decisions = pd.Series(KB_decisions)
 print("The accuracy of the knowledge base is", (sum(1 for x,y in zip(KB_decisions,y_test) if x == y) / len(y_test)))
+print("The area under the Receiver Operating Characteristic Curve for the knowledge base is", roc_auc_score(y_test, KB_decisions))
 print("The accuracy of the entire loop is", (sum(1 for x,y in zip(loop_decisions,y_test) if x == y) / len(y_test)))
+print("The area under the Receiver Operating Characteristic Curve for the entire loop is", roc_auc_score(y_test, loop_decisions))
 
 # make the predictions into columns in X_test and save the data to an excel file
 X_test['ML Predicted'] = ML_predictions
 X_test['KB Predicted'] = KB_decisions
 X_test['Loop Predicted'] = loop_decisions
 X_test.to_excel('test_data.xlsx')
+print("The admissions decisions have been saved to the file 'test_data.xlsx'.")
