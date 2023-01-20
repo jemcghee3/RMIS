@@ -3,6 +3,8 @@ import numpy as np
 import pickle
 import fhnw_KB as KB
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import RocCurveDisplay
+import matplotlib.pyplot as plt
 
 # Load the data from an Excel file
 # 2023_spring and 2022_fall to be used for test data
@@ -42,18 +44,42 @@ ML_predictions = clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, 
 
 # The code below is for applying the model to new applicants
 loop_decisions = KB.loop_decision_maker(X_test)
+loop_decisions_no_human = KB.loop_decision_maker(X_test) # This is for the case where the human does not intervene
 KB_decisions = KB.KB_decision_maker(X_test)
+KB_decisions_no_human = KB.KB_decision_maker(X_test) # This is for the case where the human does not intervene
+
 
 approved_universities = pickle.load(open('approved_universities.pkl', 'rb'))
 
 # Iterate through the test set
+
+for i in range(len(X_test)):
+    # simulate no human intervention when unknown university is found
+    if X_test.iloc[i, X_test.columns.get_loc("University")] not in approved_universities:
+        KB_decisions_no_human[i] = 0
+
 print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
 # commented out for testing purposes to avoid having to answer each time
-for i in range(len(X_test)):
+"""for i in range(len(X_test)):
     result, approved_universities = KB.check_university(X_test.iloc[i, X_test.columns.get_loc("University")], approved_universities)
     if result == 0:
         print("The student {} {} is rejected. {} is not an approved university.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("University")]))
-        KB_decisions[i] = 0
+        KB_decisions[i] = 0"""
+
+# simulate no human intervention when rule is broken
+for i in range(len(X_test)):
+    result = KB.compare_grade_experience(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")])
+    if result == 0:
+        KB_decisions_no_human[i] = 0
+        continue
+    result = KB.no_negative_score(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")])
+    if result == 0:
+        KB_decisions_no_human[i] = 0
+        continue
+    result = KB.no_negative_score(X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")])   
+    if result == 0:
+        KB_decisions_no_human[i] = 0
+        continue
 
 compensation_rule_check = False
 for i in range(len(X_test)):
@@ -93,11 +119,13 @@ for i in range(len(X_test)):
 
 for i in range(len(X_test)):
     loop_decisions[i] = min(ML_predictions[i], KB_decisions[i])
-
+    loop_decisions_no_human[i] = min(ML_predictions[i], KB_decisions_no_human[i])
+    
 # print(ML_predictions)
 # print(type(ML_predictions))
 
 loop_decisions = np.array(loop_decisions)  
+loop_decisions_no_human = np.array(loop_decisions_no_human)
 
 # print(type(loop_decisions))
 
@@ -117,8 +145,23 @@ print("The area under the Receiver Operating Characteristic Curve for the machin
 KB_decisions = pd.Series(KB_decisions)
 print("The accuracy of the knowledge base is", (sum(1 for x,y in zip(KB_decisions,y_test) if x == y) / len(y_test)))
 print("The area under the Receiver Operating Characteristic Curve for the knowledge base is", roc_auc_score(y_test, KB_decisions))
+print("The accuracy of the knowledge base if no human interaction had been supplied is", (sum(1 for x,y in zip(KB_decisions_no_human,y_test) if x == y) / len(y_test)))
+print("The area under the Receiver Operating Characteristic Curve for the knowledge base if no human interaction had been supplied is", roc_auc_score(y_test, KB_decisions_no_human))
+print("The accuracy of the entire loop if no human interaction had been supplied is", (sum(1 for x,y in zip(loop_decisions_no_human,y_test) if x == y) / len(y_test)))
+print("The area under the Receiver Operating Characteristic Curve for the entire loop if no human interaction had been supplied is", roc_auc_score(y_test, loop_decisions_no_human))
 print("The accuracy of the entire loop is", (sum(1 for x,y in zip(loop_decisions,y_test) if x == y) / len(y_test)))
 print("The area under the Receiver Operating Characteristic Curve for the entire loop is", roc_auc_score(y_test, loop_decisions))
+
+ax = plt.gca()
+ML_display = RocCurveDisplay.from_estimator(clf, X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test, name='ML Model', ax=ax, alpha=0.8)
+KB_display = RocCurveDisplay.from_predictions(y_test, KB_decisions, name='KB Model', ax=ax, alpha=0.8)
+KB_no_human_display = RocCurveDisplay.from_predictions(y_test, KB_decisions_no_human, name='KB Model (no human interaction)', ax=ax, alpha=0.8)
+Loop_display = RocCurveDisplay.from_predictions(y_test, loop_decisions, name='Loop Model', ax=ax, alpha=0.8)
+loop_decisions_no_human_display = RocCurveDisplay.from_predictions(y_test, loop_decisions_no_human, name='Loop Model (no human interaction)', ax=ax, alpha=0.8)
+Loop_no_human_display = RocCurveDisplay.from_predictions(y_test, loop_decisions, name='Loop Model', ax=ax, alpha=0.8)
+Loop_display.ax_.set_title('ROC Curves for ML and KB Models and the Entire Loop')
+Loop_display.ax_.legend(loc='lower right')
+Loop_display.figure_.savefig('ROCCurve.png')
 
 # make the predictions into columns in X_test and save the data to an excel file
 X_test['ML Predicted'] = ML_predictions
