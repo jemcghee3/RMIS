@@ -24,6 +24,11 @@ clf = pickle.load(open('model.pkl','rb'))
 # Print the accuracy of the model
 # print(clf.score(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test))
 # Print the class probabilities
+ML_probabilities = clf.predict_proba(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])
+ML_admission_probabilities = []
+for i in ML_probabilities:
+    ML_admission_probabilities.append(i[1])
+# print(ML_admission_probabilities)
 # print(clf.predict_proba(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])) # the second item in the sublist is the probability of the class 1
 # save the predicted classes
 ML_predictions = clf.predict(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])
@@ -142,7 +147,6 @@ print(pd.crosstab(y_test, loop_decisions, rownames=['Actual'], colnames=['Predic
 
 print("The accuracy of the machine learning model is", clf.score(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test))
 print("The area under the Receiver Operating Characteristic Curve for the machine learning model is", roc_auc_score(y_test, clf.predict_proba(X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']])[:,1]))
-KB_decisions = pd.Series(KB_decisions)
 print("The accuracy of the knowledge base is", (sum(1 for x,y in zip(KB_decisions,y_test) if x == y) / len(y_test)))
 print("The area under the Receiver Operating Characteristic Curve for the knowledge base is", roc_auc_score(y_test, KB_decisions))
 print("The accuracy of the knowledge base if no human interaction had been supplied is", (sum(1 for x,y in zip(KB_decisions_no_human,y_test) if x == y) / len(y_test)))
@@ -164,8 +168,14 @@ Loop_display.ax_.legend(loc='lower right')
 Loop_display.figure_.savefig('ROCCurve.png')
 
 # make the predictions into columns in X_test and save the data to an excel file
+X_test['Admission Probability'] = ML_admission_probabilities
 X_test['ML Predicted'] = ML_predictions
 X_test['KB Predicted'] = KB_decisions
 X_test['Loop Predicted'] = loop_decisions
 X_test.to_excel('test_data.xlsx')
 print("The admissions decisions have been saved to the file 'test_data.xlsx'.")
+
+# The code below is to save the approved universities to a binary file, which overwrites the previous file
+# This would be used for future admission cycles, where the new approved universities would be added to the existing list
+# pickle.dump(approved_universities, open('approved_universities.pkl', 'wb'))
+# print('Done writing approved universities into a binary file')
