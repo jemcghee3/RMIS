@@ -37,7 +37,7 @@ df_2020_fall = pd.read_excel('./Registrations_Sep_2020_a.xlsm', header=2) # head
 data = pd.concat([df_2022_spring, df_2021_fall, df_2021_spring, df_2020_fall], axis = 0)
 
 data = KB.clean_data(data)
-
+# data.to_excel('train_data_clean.xlsx')
 
 """
 for col in data.columns:
