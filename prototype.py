@@ -99,6 +99,9 @@ five_fold_cv(clf, X[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y)
 clf = LogisticRegression(random_state=1)
 clf.fit(X[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y)
 
+#display regression coefficients and R-squared value of model
+print(clf.intercept_, clf.coef_, clf.score(X[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y))
+
 # save the model to disk
 pickle.dump(clf, open('model.pkl','wb'))
 
