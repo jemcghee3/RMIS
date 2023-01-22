@@ -86,18 +86,6 @@ for i in range(len(X_test)):
         KB_decisions_no_human[i] = 0
         continue
 
-compensation_rule_check = False
-for i in range(len(X_test)):
-    result = KB.compare_grade_experience(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")])
-    if result == 0: # Only check the rule if the student would be rejected by the rule
-        if compensation_rule_check == False:
-            rule = "One '0' for either average Bachelor's grade or for experience can be compensated by one '++' in another criterion."
-            compensation_rule_check, compensation_rule_validity = KB.rule_checker(rule)
-            if compensation_rule_validity == False:
-                break # If the rule is not valid, then the loop is broken to avoid applications being rejected under the rule
-        print("The student {} {} is rejected. The grade score was {} and the experience score was {}.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")]))
-        KB_decisions[i] = 0
-
 no_negative_score_rule_check = False
 for i in range(len(X_test)):
     result = KB.no_negative_score(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")])
@@ -119,7 +107,17 @@ for i in range(len(X_test)):
         print("The student {} {} is rejected. The experience score was '-', which requires rejection.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")]))
         KB_decisions[i] = 0
         
-# for i in range(len(X_test)):
+compensation_rule_check = False
+for i in range(len(X_test)):
+    result = KB.compare_grade_experience(X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")])
+    if result == 0: # Only check the rule if the student would be rejected by the rule
+        if compensation_rule_check == False:
+            rule = "One '0' for either average Bachelor's grade or for experience can be compensated by one '++' in another criterion."
+            compensation_rule_check, compensation_rule_validity = KB.rule_checker(rule)
+            if compensation_rule_validity == False:
+                break # If the rule is not valid, then the loop is broken to avoid applications being rejected under the rule
+        print("The student {} {} is rejected. The grade score was {} and the experience score was {}.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("Grade (++, +, -, 0)")], X_test.iloc[i, X_test.columns.get_loc("Experience (++, +, -, 0)")]))
+        KB_decisions[i] = 0
     
 
 for i in range(len(X_test)):
