@@ -98,7 +98,7 @@ def clean_data(df):
     return df
 
 def compare_grade_experience(grade_score, experience_score):
-    if grade_score + experience_score < 2: # if one score is 0, the other must be ++ (2), so the sum is at least + (1)
+    if grade_score + experience_score < 2: # if one score is 0, the other must be ++ (2), else both scores would be +, so the sum is at least ++ (2)
         return 0
     return 1 # the default state is to not reject the application
 
