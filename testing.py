@@ -178,4 +178,6 @@ print("The admissions decisions have been saved to the file 'test_data.xlsx'.")
 # pickle.dump(approved_universities, open('approved_universities.pkl', 'wb'))
 # print('Done writing approved universities into a binary file')
 
-# Can also retrain the model on the loop decisions and old training data for use in future application cycles.
+# prompt the user on whether to retrain the machine learning model and remind that user that if a rule was changed, the rule should be updated and the model not updated.
+# If the user approves, the model will be retrained as a new logistic regression with the training data used in prototype.py and saved to a binary file
+# if the user does not approve, the model will not be retrained and the model saved in the binary file will be used
