@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import fhnw_KB as KB
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import confusion_matrix
 from sklearn.metrics import RocCurveDisplay
 import matplotlib.pyplot as plt
 
@@ -63,13 +64,13 @@ for i in range(len(X_test)):
     if X_test.iloc[i, X_test.columns.get_loc("University")] not in approved_universities:
         KB_decisions_no_human[i] = 0
 
-print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
+"""print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
 # commented out for testing purposes to avoid having to answer each time
 for i in range(len(X_test)):
     result, approved_universities = KB.check_university(X_test.iloc[i, X_test.columns.get_loc("University")], approved_universities)
     if result == 0:
         print("The student {} {} is rejected. {} is not an approved university.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("University")]))
-        KB_decisions[i] = 0
+        KB_decisions[i] = 0"""
 
 # simulate no human intervention when rule is broken
 for i in range(len(X_test)):
@@ -158,12 +159,9 @@ ax = plt.gca()
 ML_display = RocCurveDisplay.from_estimator(clf, X_test[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y_test, name='ML Model', ax=ax, alpha=0.8)
 KB_display = RocCurveDisplay.from_predictions(y_test, KB_decisions, name='KB Model', ax=ax, alpha=0.8)
 KB_no_human_display = RocCurveDisplay.from_predictions(y_test, KB_decisions_no_human, name='KB Model (no human interaction)', ax=ax, alpha=0.8)
-Loop_display = RocCurveDisplay.from_predictions(y_test, loop_decisions, name='Loop Model', ax=ax, alpha=0.8)
-loop_decisions_no_human_display = RocCurveDisplay.from_predictions(y_test, loop_decisions_no_human, name='Loop Model (no human interaction)', ax=ax, alpha=0.8)
-Loop_no_human_display = RocCurveDisplay.from_predictions(y_test, loop_decisions, name='Loop Model', ax=ax, alpha=0.8)
-Loop_display.ax_.set_title('ROC Curves for ML and KB Models and the Entire Loop')
-Loop_display.ax_.legend(loc='lower right')
-Loop_display.figure_.savefig('ROCCurve.png')
+KB_no_human_display.ax_.set_title('ROC Curves for ML and KB Models and the Entire Loop')
+KB_no_human_display.ax_.legend(loc='lower right')
+KB_no_human_display.figure_.savefig('ROCCurve.png')
 
 # make the predictions into columns in X_test and save the data to an excel file
 X_test['Admission Probability'] = ML_admission_probabilities
@@ -172,6 +170,24 @@ X_test['KB Predicted'] = KB_decisions
 X_test['Loop Predicted'] = loop_decisions
 X_test.to_excel('test_data.xlsx')
 print("The admissions decisions have been saved to the file 'test_data.xlsx'.")
+
+# Save a confusion matrix for each model to file.
+counter = 0
+for i in [loop_decisions, loop_decisions_no_human, KB_decisions, KB_decisions_no_human, ML_predictions]:
+    n = ['Loop Model', 'Loop Model (no human interaction)', 'KB Model', 'KB Model (no human interaction)', 'ML Model'][counter]     
+    cm = confusion_matrix(y_test, i)
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.imshow(cm)
+    ax.grid(False)
+    ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted No ', 'Predicted Yes'))
+    ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual No', 'Actual Yes'))
+    ax.set_ylim(1.5, -0.5)
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
+        plt.legend("Confusion Matrix for " + n)
+        plt.savefig('confusion_matrix_' + n + '.png')
+    counter += 1
 
 # The code below is to save the approved universities to a binary file, which overwrites the previous file
 # This would be used for future admission cycles, where the new approved universities would be added to the existing list

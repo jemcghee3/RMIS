@@ -67,8 +67,11 @@ def change_plusminus_value(value):
         return 1
     elif value == '-':
         return -1
-    else:
+    elif value == '0':
         return 0
+    else:
+#        print("Error: the value is not valid")
+        return None
     
 def clean_data(df):
     # this function takes a dataframe and returns a cleaned dataframe
@@ -80,7 +83,7 @@ def clean_data(df):
     df = df.dropna(axis=1, how='all')
     # drop the rows with all NaN values
     df = df.dropna(axis=0, how='all')
-    # drop the rows with NaN values in the decision column
+    # drop the rows with NaN values in the decision column, experience column, and grade column
     df = df.dropna(subset=['HoP'])
     df = df.dropna(subset=['Deputy HoP'])
     df.columns = [x.replace("\n", " ") for x in df.columns.to_list()]
@@ -95,10 +98,14 @@ def clean_data(df):
     # change the values of plusminus columns to 2, 1, 0, -1
     df['Grade (++, +, -, 0)'] = df['Grade (++, +, -, 0)'].apply(change_plusminus_value)
     df['Experience (++, +, -, 0)'] = df['Experience (++, +, -, 0)'].apply(change_plusminus_value)
+    df = df.dropna(subset=['Grade (++, +, -, 0)'])
+    df = df.dropna(subset=['Experience (++, +, -, 0)'])
     return df
 
 def compare_grade_experience(grade_score, experience_score):
-    if grade_score + experience_score < 2: # if one score is 0, the other must be ++ (2), else both scores would be +, so the sum is at least ++ (2)
+    if grade_score == 0 and experience_score != 2: 
+        return 0
+    elif grade_score != 2 and experience_score == 0: 
         return 0
     return 1 # the default state is to not reject the application
 
