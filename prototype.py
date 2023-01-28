@@ -89,6 +89,7 @@ Decision
 X = data.drop(columns=['Decision'])
 y = data['Decision']
 
+print("The number of training examples is ", len(X))
 
 clf = LogisticRegression(random_state=1)
 five_fold_cv(clf, X[['Grade (++, +, -, 0)', 'Experience (++, +, -, 0)']], y)
