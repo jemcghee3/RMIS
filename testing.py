@@ -65,12 +65,12 @@ for i in range(len(X_test)):
         KB_decisions_no_human[i] = 0
 
 print("The following universities are not in the list of previously-approved universities. Please check whether they are valid or not.")
-# commented out for testing purposes to avoid having to answer each time
+"""# commented out for testing purposes to avoid having to answer each time
 for i in range(len(X_test)):
     result, approved_universities = KB.check_university(X_test.iloc[i, X_test.columns.get_loc("University")], approved_universities)
     if result == 0:
         print("The student {} {} is rejected. {} is not an approved university.".format(X_test.iloc[i, X_test.columns.get_loc("First Name")], X_test.iloc[i, X_test.columns.get_loc("Last Name")], X_test.iloc[i, X_test.columns.get_loc("University")]))
-        KB_decisions[i] = 0
+        KB_decisions[i] = 0"""
 
 # simulate no human intervention when rule is broken
 for i in range(len(X_test)):

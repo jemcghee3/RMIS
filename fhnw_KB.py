@@ -1,4 +1,82 @@
 import pandas as pd
+import re
+
+def experience_calculator(experience):
+    # this function takes a string of experience and returns a number of months
+    if experience == None:
+        return 0
+    if type(experience) == float:
+        return 0 # this is a NaN
+    if len(experience) == 0:
+        return 0
+    exp_regex = re.compile(r'(\d+)\s*[y]\s*(\d+[m])*')
+    mo = exp_regex.search(experience)
+    if mo == None:
+        return 0
+    if mo.group(1) != None:
+        years = int(mo.group(1))
+    else:
+        years = 0
+    if mo.group(2) != None:
+        months = int(mo.group(2)[:-1])
+    else:
+        months = 0
+    months = months + years * 12
+    return months
+
+def experience_converter(months):
+    # takes a string of months and returns a +/- value
+    months = int(months)
+    if months < 6:
+        return '0'
+    elif months < 24:
+        return '+'
+    elif months >= 24:
+        return '++'
+    else:
+        return '-'
+
+def grade_calculator(grade):
+    # this function takes a string of grade and returns a GPA
+#    print("input grade " + str(grade))
+    if grade == None:
+        return 0
+    grade = str(grade)
+    if len(grade) == 0:
+        return 0
+    exp_regex = re.compile(r'(\d)(\.*\d*)')
+    mo = exp_regex.search(grade)
+#    print("mo is " + str(mo))
+    if mo == None:
+        return 0
+    if mo.group(1) != None:
+        first = int(mo.group(1))
+    else:
+        first = 0
+    if mo.group(2) != None and len(mo.group(2)) > 0:
+        second = int(mo.group(2)[1:])
+    else:
+        second = 0
+    GPA = str(first) + '.' + str(second)
+    print("output gpa " + str(GPA))
+    return GPA
+
+def grade_converter(grade):
+    # takes a string of grade and returns a +/- value
+    grade = float(grade)
+    print("input grade " + str(grade))
+    if grade >= 5.3:
+        print("output grade " + '++')
+        return '++'
+    elif grade >= 4.8:
+        print("output grade " + '+')
+        return '+'
+    elif grade >= 4.6:
+        print("output grade " + '0')
+        return '0'
+    else:
+        print("output grade " + '-')
+        return '-'
 
 def KB_decision_maker(new_applications):
     # this function takes a dataframe of new applications and returns a list of predictions to be made by the KB
@@ -96,6 +174,10 @@ def clean_data(df):
     df['Decision'] = df['Decision'].apply(lambda x: 1 if x == 2 else 0)
     # this means we want those applicants where both HoP and Deputy HoP have accepted
     # change the values of plusminus columns to 2, 1, 0, -1
+    df['Experience (y,m)'] = df['Experience (y,m)'].apply(experience_calculator)
+    df['Experience (++, +, -, 0)'] = df['Experience (y,m)'].apply(experience_converter)
+    df['Grade'] = df['Grade'].apply(grade_calculator)
+    df['Grade (++, +, -, 0)'] = df['Grade'].apply(grade_converter)
     df['Grade (++, +, -, 0)'] = df['Grade (++, +, -, 0)'].apply(change_plusminus_value)
     df['Experience (++, +, -, 0)'] = df['Experience (++, +, -, 0)'].apply(change_plusminus_value)
     df = df.dropna(subset=['Grade (++, +, -, 0)'])
